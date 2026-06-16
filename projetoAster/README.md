@@ -52,9 +52,6 @@ Tabela de termos e definições
 | - | - |
 | Ficha | Conjunto de informações sobre o personagem |
 | Sistema Áster | O conjunto padrão de regras de RPG |
-|||
-|||
-|||
 
 Lista de Acrônimos
 
