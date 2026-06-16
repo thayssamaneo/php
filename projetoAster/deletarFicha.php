@@ -26,7 +26,7 @@ try {
     $user_data = $stmt_user->fetch(PDO::FETCH_ASSOC);
     $usuario_id = $user_data['idusuarios'];
 
-    // 2. Buscar as referências das sub-tabelas vinculadas a essa ficha
+    // Buscar as referências das sub-tabelas vinculadas a essa ficha
     $sql_busca = "SELECT informacoesbase_id, atributos_id, habilidades_id FROM fichas WHERE idfichas = :id_ficha AND usuario_id = :usuario_id";
     $stmt_busca = $conexao->prepare($sql_busca);
     $stmt_busca->bindValue(':id_ficha', $id_ficha);
@@ -40,13 +40,13 @@ try {
         // Iniciamos uma transação para garantir que ou apaga TUDO ou não apaga NADA
         $conexao->beginTransaction();
 
-        // A. Primeiro, removemos o registro principal na tabela 'fichas' para quebrar o vínculo
+        //  remover o registro principal na tabela 'fichas' para quebrar o vínculo
         $sql_del_ficha = "DELETE FROM fichas WHERE idfichas = :id_ficha";
         $stmt_del_ficha = $conexao->prepare($sql_del_ficha);
         $stmt_del_ficha->bindValue(':id_ficha', $id_ficha);
         $stmt_del_ficha->execute();
 
-        // B. Agora apagamos com segurança os dados das tabelas dependentes
+        // Agora apagar os dados das tabelas dependentes
         if (!empty($ficha_refs['informacoesbase_id'])) {
             $conexao->prepare("DELETE FROM informacoesbase WHERE idinformacoesbase = ?")->execute([$ficha_refs['informacoesbase_id']]);
         }
@@ -59,11 +59,11 @@ try {
             $conexao->prepare("DELETE FROM habilidades WHERE idhabilidades = ?")->execute([$ficha_refs['habilidades_id']]);
         }
 
-        // Confirma as alterações no banco de dados
+        // Confirmar as alterações no banco de dados
         $conexao->commit();
     }
 
-    // Redireciona de volta atualizando a página sem a ficha deletada
+    // Redirecionar de volta atualizando a página sem a ficha deletada
     header("Location: suasFichas.php");
     exit();
 
