@@ -84,10 +84,10 @@ Este documento está organizado em:
 ```mermaid
     flowchart TD
         usuário --> interface
-        interface --> lógica php
-        lógica php --> banco de dados
-        banco de dados --> lógica php
-        lógica php --> interface
+        interface --> lógicaPHP
+        lógicaPHP --> bancoDeDados
+        bancoDeDados --> lógicaPHP
+        lógicaPHP --> interface
         interface --> usuário
 ```
 
