@@ -139,7 +139,7 @@
 <h1 class="font-brand text-[44px] text-secondary-container drop-shadow-sm cursor-pointer hover:text-secondary-fixed-dim transition-all duration-300 leading-none">
 <img alt="Logo" class="inline-block h-12 w-auto mr-3 align-middle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUdPDRqfuHwZmxBu14HYH3TFhDWayvqszsJzU70FpW23aBH3WYK5YYcgMig-WNSNccEIDJj5uhmti5VCgdj3K4DK6hjQzLWtPFDI05hVvaahDn8fEUkqrP2vM7kn607cGGbXAw1p53lVlDEwMkJQDMBlRsziOCYGqPLn0p8_NZUieQjbJunR-qo908WvEqG8hVJkGyLBlJsAhI5T90vsVcQeNrMrwwbXOGGbSvrqzV0xcYjWgYepv_0sUndcL8hVXjqZm6KVSlyeQ"/>Áster
 </h1>
-<a href="paginaLogin.html" class="bg-primary-container text-secondary-container border border-secondary-container px-6 py-2 font-label-caps text-label-caps hover:bg-secondary-container hover:text-primary-container transition-all active:scale-95" onclick="">
+<a href="paginaLogin.php" class="bg-primary-container text-secondary-container border border-secondary-container px-6 py-2 font-label-caps text-label-caps hover:bg-secondary-container hover:text-primary-container transition-all active:scale-95" onclick="">
                 Login
 </a>
 </div>
@@ -158,7 +158,7 @@
                         Áster é um RPG de mundo aberto que se passa em uma terra conhecida como Setra. Um lugar que no passado era rico em magia, hoje se encontra em desequilibrio, beirando o colapso e próximo da realização de uma profecia. A campanha principal de Áster acompanha um grupo do governo que buscando uma resposta simples se vê no meio de caos e uma conspiração maior que o imaginado.
                     </p>
 <div class="pt-4">
-<a href="paginaLogin.html" class="bg-primary-container text-secondary-container font-headline-sm text-headline-sm px-8 py-4 rounded-sm border border-secondary-container/30 hover:shadow-[0_0_15px_rgba(238,197,84,0.3)] transition-all active:scale-95 group">
+<a href="paginaLogin.php" class="bg-primary-container text-secondary-container font-headline-sm text-headline-sm px-8 py-4 rounded-sm border border-secondary-container/30 hover:shadow-[0_0_15px_rgba(238,197,84,0.3)] transition-all active:scale-95 group">
                             Crie sua primeira ficha
                             <span class="material-symbols-outlined ml-2 group-hover:translate-x-1 transition-transform">auto_fix</span>
 </a>

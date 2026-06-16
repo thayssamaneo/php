@@ -1,7 +1,127 @@
+<?php
+
+if (!isset($_SESSION)) {
+    session_start();
+}
+// Se o usuário não estiver logado, redireciona para o login
+if (!isset($_SESSION['nomeUsuario'])) {
+    header("Location: Paginalogin.php");
+    exit();
+}
+
+include("conexao.php");
+
+// Recuperar o ID do usuário logado na sessão
+// Certifique-se de salvar o 'idUsuarios' na sessão no momento em que ele faz login
+$sql_user = "SELECT idusuarios FROM usuarios WHERE nomeusuario = :user";
+$stmt_user = $conexao->prepare($sql_user);
+$stmt_user->bindValue(':user', $_SESSION['nomeUsuario']);
+$stmt_user->execute();
+$user_data = $stmt_user->fetch(PDO::FETCH_ASSOC);
+$usuario_id = $user_data['idusuarios'];
+
+$mensagem = "";
+$erro = "";
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $conexao->beginTransaction();
+
+        // 1. Upload da imagem de aparência com Nome Único
+        $caminho_imagem = "img/default_avatar.png"; // Padrão caso não envie
+        if (isset($_FILES['aparencia']) && $_FILES['aparencia']['error'] === UPLOAD_ERR_OK) {
+            $extensao = pathinfo($_FILES['aparencia']['name'], PATHINFO_EXTENSION);
+            $nome_unico = md5(uniqid(rand(), true)) . "." . $extensao;
+            $caminho_imagem = "img/" . $nome_unico;
+            
+            if (!is_dir('img')) {
+                mkdir('img', 0777, true);
+            }
+            move_uploaded_file($_FILES['aparencia']['tmp_name'], $caminho_imagem);
+        }
+
+        // 2. Insert na tabela informacoesBase
+        $sql_info = "INSERT INTO informacoesbase (nomepersonagem, idade, especie, aparencia, conexaomagica, hobbies, inventario, observacoes, magiasconhecidas) 
+                     VALUES (:nome, :idade, :especie, :aparencia, :conexao, :hobbies, :inventario, :observacoes, :magias) RETURNING idInformacoesBase";
+        $stmt_info = $conexao->prepare($sql_info);
+        $stmt_info->bindValue(':nome', $_POST['nomePersonagem'] ?? '');
+        $stmt_info->bindValue(':idade', (int)($_POST['idade'] ?? 0));
+        $stmt_info->bindValue(':especie', $_POST['especie'] ?? '');
+        $stmt_info->bindValue(':aparencia', $caminho_imagem);
+        $stmt_info->bindValue(':conexao', (int)($_POST['conexaoMagica'] ?? 0));
+        $stmt_info->bindValue(':hobbies', $_POST['hobbies'] ?? '');
+        $stmt_info->bindValue(':inventario', $_POST['inventario'] ?? '');
+        $stmt_info->bindValue(':observacoes', $_POST['observacoes'] ?? '');
+        $stmt_info->bindValue(':magias', $_POST['magiasConhecidas'] ?? '');
+        $stmt_info->execute();
+        $info_id = $stmt_info->fetchColumn();
+
+        // 3. Insert na tabela atributos
+        $sql_atri = "INSERT INTO atributos (forca, intelecto, agilidade, carisma, vida, afinidademagica, defesa, defesamagica, bloqueio) 
+                     VALUES (:forca, :intelecto, :agilidade, :carisma, :vida, :afinidade, :defesa, :defesaMagica, :bloqueio) RETURNING idAtributos";
+        $stmt_atri = $conexao->prepare($sql_atri);
+        $stmt_atri->bindValue(':forca', (int)($_POST['forca'] ?? 0));
+        $stmt_atri->bindValue(':intelecto', (int)($_POST['intelecto'] ?? 0));
+        $stmt_atri->bindValue(':agilidade', (int)($_POST['agilidade'] ?? 0));
+        $stmt_atri->bindValue(':carisma', (int)($_POST['carisma'] ?? 0));
+        $stmt_atri->bindValue(':vida', (int)($_POST['vida'] ?? 100));
+        $stmt_atri->bindValue(':afinidade', (int)($_POST['afinidadeMagica'] ?? 0));
+        $stmt_atri->bindValue(':defesa', (int)($_POST['defesa'] ?? 0));
+        $stmt_atri->bindValue(':defesaMagica', (int)($_POST['defesaMagica'] ?? 0));
+        $stmt_atri->bindValue(':bloqueio', (int)($_POST['bloqueio'] ?? 0));
+        $stmt_atri->execute();
+        $atri_id = $stmt_atri->fetchColumn();
+
+        // 4. Insert na tabela habilidades
+        $sql_hab = "INSERT INTO habilidades (crime, furtividade, iniciativa, tiroaoalvo, luta, atletismo, intuicao, investigacao, medicina, sobrevivencia, tatica, labia, orientacaogeografica, percepcao, adestramento, alquimia, navegacao) 
+                    VALUES (:crime, :furtividade, :iniciativa, :tiro, :luta, :atletismo, :intuicao, :investigacao, :medicina, :sobrevivencia, :tatica, :labia, :orientacao, :percepcao, :adestramento, :alquimia, :navegacao) RETURNING idHabilidades";
+        $stmt_hab = $conexao->prepare($sql_hab);
+        $stmt_hab->bindValue(':crime', (int)($_POST['crime'] ?? 0));
+        $stmt_hab->bindValue(':furtividade', (int)($_POST['furtividade'] ?? 0));
+        $stmt_hab->bindValue(':iniciativa', (int)($_POST['iniciativa'] ?? 0));
+        $stmt_hab->bindValue(':tiro', (int)($_POST['tiroAoAlvo'] ?? 0));
+        $stmt_hab->bindValue(':luta', (int)($_POST['luta'] ?? 0));
+        $stmt_hab->bindValue(':atletismo', (int)($_POST['atletismo'] ?? 0));
+        $stmt_hab->bindValue(':intuicao', (int)($_POST['intuicao'] ?? 0));
+        $stmt_hab->bindValue(':investigacao', (int)($_POST['investigacao'] ?? 0));
+        $stmt_hab->bindValue(':medicina', (int)($_POST['medicina'] ?? 0));
+        $stmt_hab->bindValue(':sobrevivencia', (int)($_POST['sobrevivencia'] ?? 0));
+        $stmt_hab->bindValue(':tatica', (int)($_POST['tatica'] ?? 0));
+        $stmt_hab->bindValue(':labia', (int)($_POST['labia'] ?? 0));
+        $stmt_hab->bindValue(':orientacao', (int)($_POST['orientacaoGeografica'] ?? 0));
+        $stmt_hab->bindValue(':percepcao', (int)($_POST['percepcao'] ?? 0));
+        $stmt_hab->bindValue(':adestramento', (int)($_POST['adestramento'] ?? 0));
+        $stmt_hab->bindValue(':alquimia', (int)($_POST['alquimia'] ?? 0));
+        $stmt_hab->bindValue(':navegacao', (int)($_POST['navegacao'] ?? 0));
+        $stmt_hab->execute();
+        $hab_id = $stmt_hab->fetchColumn();
+
+        // 5. Vincular tudo na tabela Fichas associada ao usuário ativo
+        $sql_ficha = "INSERT INTO fichas (informacoesbase_id, atributos_id, habilidades_id, criadaem, usuario_id) 
+                      VALUES (:info_id, :atri_id, :hab_id, CURRENT_DATE, :user_id)";
+        $stmt_ficha = $conexao->prepare($sql_ficha);
+        $stmt_ficha->bindValue(':info_id', $info_id);
+        $stmt_ficha->bindValue(':atri_id', $atri_id);
+        $stmt_ficha->bindValue(':hab_id', $hab_id);
+        $stmt_ficha->bindValue(':user_id', $usuario_id);
+        $stmt_ficha->execute();
+
+        $conexao->commit();
+        header("Location: suasFichas.php");
+        exit();
+
+    } catch (Exception $e) {
+        $conexao->rollBack();
+        $erro = "Falha ao gravar os dados da ficha: " . $e->getMessage();
+    }
+}
+?>
+<!DOCTYPE html>
+
 <!DOCTYPE html><html lang="pt-BR"><head><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
-<title>Áster RPG - Criador de Fichas</title>
+<title>Áster - Criador de Fichas</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Amita:wght@400;700&amp;family=Courier+Prime:wght@400;700&amp;family=Playfair+Display:wght@400;600;700&amp;family=Work+Sans:wght@400;600&amp;family=Fleur+De+Leah&amp;display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
@@ -169,7 +289,7 @@
 <img alt="Logo" class="inline-block h-12 w-auto mr-3 align-middle " src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUdPDRqfuHwZmxBu14HYH3TFhDWayvqszsJzU70FpW23aBH3WYK5YYcgMig-WNSNccEIDJj5uhmti5VCgdj3K4DK6hjQzLWtPFDI05hVvaahDn8fEUkqrP2vM7kn607cGGbXAw1p53lVlDEwMkJQDMBlRsziOCYGqPLn0p8_NZUieQjbJunR-qo908WvEqG8hVJkGyLBlJsAhI5T90vsVcQeNrMrwwbXOGGbSvrqzV0xcYjWgYepv_0sUndcL8hVXjqZm6KVSlyeQ"/><a href="index.html">Áster</a>
 </h1>
 <div class="hidden md:flex items-center gap-8 font-label-caps uppercase tracking-widest text-parchment-base opacity-80">
-<a class="hover:text-ethereal-gold hover:shadow-[0_0_15px_rgba(238,197,84,0.3)] transition-all pb-1 border-b border-transparent hover:border-ethereal-gold" href="suasFichas.html">Minhas Fichas</a>
+<a class="hover:text-ethereal-gold hover:shadow-[0_0_15px_rgba(238,197,84,0.3)] transition-all pb-1 border-b border-transparent hover:border-ethereal-gold" href="suasFichas.php">Minhas Fichas</a>
 </div>
 
 </div>
@@ -181,7 +301,7 @@
 <h1 class="font-fleur text-[64px] text-arcane-purple leading-none">Áster criador de fichas</h1>
 <div class="section-divider !mt-8"></div>
 </div>
-<form class="space-y-16" id="characterSheet">
+<form class="space-y-16" id="characterSheet" method="post" enctype="multipart/form-data">
 <!-- Section 1: Informações Básicas -->
 <section>
 <div class="flex items-center gap-4 mb-8">
@@ -192,19 +312,19 @@
 <div class="col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-8">
 <div class="flex flex-col gap-1">
 <label class="font-label-caps text-label-caps uppercase opacity-70">Nome do Personagem</label>
-<input class="input-underline font-body-md text-body-md text-arcane-purple" placeholder="Ex: Elara Silverleaf" type="text">
+<input class="input-underline font-body-md text-body-md text-arcane-purple" placeholder="Ex: Elara Silverleaf" type="text" name="nomePersonagem">
 </div>
 <div class="flex flex-col gap-1">
 <label class="font-label-caps text-label-caps uppercase opacity-70">Idade</label>
-<input class="input-underline font-body-md text-body-md text-arcane-purple w-24" placeholder="--" type="number">
+<input class="input-underline font-body-md text-body-md text-arcane-purple w-24" placeholder="--" type="number" name="idade">
 </div>
 <div class="flex flex-col gap-1">
 <label class="font-label-caps text-label-caps uppercase opacity-70">Espécie / Origem</label>
-<input class="input-underline font-body-md text-body-md text-arcane-purple" placeholder="Ex: Fantasma" type="text">
+<input class="input-underline font-body-md text-body-md text-arcane-purple" placeholder="Ex: Fantasma" type="text" name="especie">
 </div>
 <div class="flex flex-col gap-1">
 <label class="font-label-caps text-label-caps uppercase opacity-70">Conexão Mágica (0-10)</label>
-<input class="input-underline font-body-md text-body-md text-arcane-purple w-24" max="10" min="0" placeholder="0" type="number">
+<input class="input-underline font-body-md text-body-md text-arcane-purple w-24" max="10" min="0" placeholder="0" type="number" name="conexaoMagica">
 </div>
 </div>
 <div class="col-span-1">
@@ -212,7 +332,7 @@
 <div class="border-2 border-dashed border-arcane-purple/20 bg-stone-background/10 aspect-[4/5] flex flex-col items-center justify-center cursor-pointer hover:bg-stone-background/20 transition-all group relative overflow-hidden">
 <span class="material-symbols-outlined text-4xl text-arcane-purple/40 group-hover:scale-110 transition-transform">add_a_photo</span>
 <p class="font-label-caps text-[10px] mt-2 opacity-40">Enviar Imagem</p>
-<input class="absolute inset-0 opacity-0 cursor-pointer" type="file">
+<input class="absolute inset-0 opacity-0 cursor-pointer" type="file" name="aparencia">
 </div>
 </div>
 </div>
@@ -228,19 +348,19 @@
 <!-- Attributes -->
 <div class="attribute-orb p-6 rounded-full aspect-square flex flex-col items-center justify-center gap-2 border-arcane-purple/30 border-2">
 <label class="font-label-caps text-[10px] uppercase text-arcane-purple">Força</label>
-<input class="bg-transparent text-center font-display-manuscript text-3xl w-16 text-arcane-purple border-none focus:ring-0" type="number" value="0">
+<input class="bg-transparent text-center font-display-manuscript text-3xl w-16 text-arcane-purple border-none focus:ring-0" type="number" value="0" name="forca">
 </div>
 <div class="attribute-orb p-6 rounded-full aspect-square flex flex-col items-center justify-center gap-2 border-arcane-purple/30 border-2">
 <label class="font-label-caps text-[10px] uppercase text-arcane-purple">Intelecto</label>
-<input class="bg-transparent text-center font-display-manuscript text-3xl w-16 text-arcane-purple border-none focus:ring-0" type="number" value="0">
+<input class="bg-transparent text-center font-display-manuscript text-3xl w-16 text-arcane-purple border-none focus:ring-0" type="number" value="0" name="intelecto">
 </div>
 <div class="attribute-orb p-6 rounded-full aspect-square flex flex-col items-center justify-center gap-2 border-arcane-purple/30 border-2">
 <label class="font-label-caps text-[10px] uppercase text-arcane-purple">Agilidade</label>
-<input class="bg-transparent text-center font-display-manuscript text-3xl w-16 text-arcane-purple border-none focus:ring-0" type="number" value="0">
+<input class="bg-transparent text-center font-display-manuscript text-3xl w-16 text-arcane-purple border-none focus:ring-0" type="number" value="0" name="agilidade">
 </div>
 <div class="attribute-orb p-6 rounded-full aspect-square flex flex-col items-center justify-center gap-2 border-arcane-purple/30 border-2">
 <label class="font-label-caps text-[10px] uppercase text-arcane-purple">Carisma</label>
-<input class="bg-transparent text-center font-display-manuscript text-3xl w-16 text-arcane-purple border-none focus:ring-0" type="number" value="0">
+<input class="bg-transparent text-center font-display-manuscript text-3xl w-16 text-arcane-purple border-none focus:ring-0" type="number" value="0" name="carisma">
 </div>
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-8 bg-ink-deep/5 p-8 rounded-lg">
@@ -248,19 +368,19 @@
 <div class="grid grid-cols-2 gap-4">
 <div class="flex flex-col gap-1">
 <label class="font-label-caps text-label-caps uppercase opacity-70">Defesa</label>
-<input class="input-underline font-body-md text-body-md text-arcane-purple" type="number">
+<input class="input-underline font-body-md text-body-md text-arcane-purple" type="number" name="defesa">
 </div>
 <div class="flex flex-col gap-1">
 <label class="font-label-caps text-label-caps uppercase opacity-70">Def. Mágica</label>
-<input class="input-underline font-body-md text-body-md text-arcane-purple" type="number">
+<input class="input-underline font-body-md text-body-md text-arcane-purple" type="number" name="defesaMagica">
 </div>
 <div class="flex flex-col gap-1">
 <label class="font-label-caps text-label-caps uppercase opacity-70">Bloqueio</label>
-<input class="input-underline font-body-md text-body-md text-arcane-purple" type="number">
+<input class="input-underline font-body-md text-body-md text-arcane-purple" type="number" name="bloqueio">
 </div>
 <div class="flex flex-col gap-1">
 <label class="font-label-caps text-label-caps uppercase opacity-70">Esquiva</label>
-<input class="input-underline font-body-md text-body-md text-arcane-purple" type="number">
+<input class="input-underline font-body-md text-body-md text-arcane-purple" type="number" name="esquiva">
 </div>
 </div>
 </div>
@@ -268,16 +388,16 @@
 <div class="space-y-2">
 <div class="flex justify-between items-center">
 <label class="font-label-caps text-label-caps uppercase text-arcane-purple font-bold">Vida</label>
-<span class="font-body-md text-arcane-purple" id="lifeVal">100/100</span>
+<span class="font-body-md text-arcane-purple" id="lifeVal">50/100</span>
 </div>
-<input class="w-full h-2 bg-parchment-base rounded-lg appearance-none cursor-pointer accent-arcane-purple" oninput="document.getElementById('lifeVal').innerText = this.value + '/100'" type="range">
+<input class="w-full h-2 bg-parchment-base rounded-lg appearance-none cursor-pointer accent-arcane-purple" oninput="document.getElementById('lifeVal').innerText = this.value + '/100'" type="range" name="vida">
 </div>
 <div class="space-y-2">
 <div class="flex justify-between items-center">
 <label class="font-label-caps text-label-caps uppercase text-secondary font-bold">Afinidade Mágica</label>
 <span class="font-body-md text-secondary" id="magicVal">50%</span>
 </div>
-<input class="w-full h-2 bg-parchment-base rounded-lg appearance-none cursor-pointer accent-ethereal-gold" oninput="document.getElementById('magicVal').innerText = this.value + '%'" type="range">
+<input class="w-full h-2 bg-parchment-base rounded-lg appearance-none cursor-pointer accent-ethereal-gold" oninput="document.getElementById('magicVal').innerText = this.value + '%'" type="range" name="afinidadeMagica">
 </div>
 </div>
 </div>
@@ -292,23 +412,32 @@
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-4">
 <!-- Ability Inputs -->
 <script>
-                            const skills = [
-                                "Crime", "Furtividade", "Iniciativa", "Tiro ao Alvo", 
-                                "Luta", "Atletismo", "Intuição", "Investigação", 
-                                "Medicina", "Sobrevivência", "Tática", "Lábia", 
-                                "Percepção", "Lidar com Animais", "Orientação Geográfica", 
-                                "Alquimia", "Navegação"
-                            ];
-                            skills.forEach(skill => {
-                                document.write(`
-                                    <div class="flex items-center justify-between border-b border-arcane-purple/10 py-1 hover:bg-arcane-purple/5 transition-colors px-2">
-                                        <span class="font-body-md text-[13px] text-on-surface opacity-80">${skill}</span>
-                                        <input type="number" value="0" class="w-10 bg-transparent text-right font-bold text-arcane-purple border-none focus:ring-0 p-0">
-                                    </div>
-                                `);
-                            });
-                        </script>                         
-                                
+    const skills = [
+        "Crime", "Furtividade", "Iniciativa", "Tiro ao Alvo", 
+        "Luta", "Atletismo", "Intuição", "Investigação", 
+        "Medicina", "Sobrevivência", "Tática", "Lábia", 
+        "Percepção", "Lidar com Animais", "Orientação Geográfica", 
+        "Alquimia", "Navegação"
+    ];
+    const skillsDB = [
+        "crime", "furtividade", "iniciativa", "tiroAoAlvo", 
+        "luta", "atletismo", "intuicao", "investigacao", 
+        "medicina", "sobrevivencia", "tatica", "labia", 
+        "percepcao", "adestramento", "orientacaoGeografica", 
+        "alquimia", "navegacao"
+    ];
+    
+    skills.forEach((skill, i) => {
+        document.write(`
+            <div class="flex items-center justify-between border-b border-arcane-purple/10 py-1 hover:bg-arcane-purple/5 transition-colors px-2">
+                <span class="font-body-md text-[13px] text-on-surface opacity-80">${skill}</span>
+                <input type="number" value="0" min="0"
+                name="${skillsDB[i]}"
+                class="w-10 bg-transparent text-right font-bold text-arcane-purple border-none focus:ring-0 p-0">
+            </div>
+        `);
+    });
+</script>                                         
 </div>
 </section>
 <div class="section-divider"></div>
@@ -316,32 +445,32 @@
 <section>
 <div class="flex items-center gap-4 mb-8">
 <span class="material-symbols-outlined text-arcane-purple">inventory_2</span>
-<h2 class="font-fleur text-section-title text-arcane-purple">Crônicas &amp; Pertences</h2>
+<h2 class="font-fleur text-section-title text-arcane-purple">Anotações &amp; Pertences</h2>
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 <div class="space-y-2">
 <label class="font-label-caps text-label-caps uppercase opacity-70 flex items-center gap-2">
 <span class="material-symbols-outlined text-sm">auto_fix_high</span> Magias Conhecidas
                             </label>
-<textarea class="w-full bg-ink-deep/5 border-arcane-purple/20 font-body-md text-body-md p-4 rounded focus:ring-ethereal-gold focus:border-ethereal-gold" placeholder="Descreva os rituais e encantamentos..." rows="6"></textarea>
+<textarea class="w-full bg-ink-deep/5 border-arcane-purple/20 font-body-md text-body-md p-4 rounded focus:ring-ethereal-gold focus:border-ethereal-gold" placeholder="Descreva os rituais e encantamentos..." rows="6" name="magiasConhecidas"></textarea>
 </div>
 <div class="space-y-2">
 <label class="font-label-caps text-label-caps uppercase opacity-70 flex items-center gap-2">
 <span class="material-symbols-outlined text-sm">backpack</span> Inventário
                             </label>
-<textarea class="w-full bg-ink-deep/5 border-arcane-purple/20 font-body-md text-body-md p-4 rounded focus:ring-ethereal-gold focus:border-ethereal-gold" placeholder="Itens consumíveis, armas, tesouros..." rows="6"></textarea>
+<textarea class="w-full bg-ink-deep/5 border-arcane-purple/20 font-body-md text-body-md p-4 rounded focus:ring-ethereal-gold focus:border-ethereal-gold" placeholder="Itens consumíveis, armas, tesouros..." rows="6" name="inventario"></textarea>
 </div>
 <div class="space-y-2">
 <label class="font-label-caps text-label-caps uppercase opacity-70 flex items-center gap-2">
 <span class="material-symbols-outlined text-sm">history_edu</span> Observações
                             </label>
-<textarea class="w-full bg-ink-deep/5 border-arcane-purple/20 font-body-md text-body-md p-4 rounded focus:ring-ethereal-gold focus:border-ethereal-gold" placeholder="Anotações sobre a jornada..." rows="6"></textarea>
+<textarea class="w-full bg-ink-deep/5 border-arcane-purple/20 font-body-md text-body-md p-4 rounded focus:ring-ethereal-gold focus:border-ethereal-gold" placeholder="Anotações sobre a jornada..." rows="6" name="observacoes"></textarea>
 </div>
 <div class="space-y-2">
 <label class="font-label-caps text-label-caps uppercase opacity-70 flex items-center gap-2">
 <span class="material-symbols-outlined text-sm">palette</span> Hobbies &amp; Talentos
                             </label>
-<textarea class="w-full bg-ink-deep/5 border-arcane-purple/20 font-body-md text-body-md p-4 rounded focus:ring-ethereal-gold focus:border-ethereal-gold" placeholder="O que seu personagem faz no tempo livre?" rows="6"></textarea>
+<textarea class="w-full bg-ink-deep/5 border-arcane-purple/20 font-body-md text-body-md p-4 rounded focus:ring-ethereal-gold focus:border-ethereal-gold" placeholder="O que seu personagem faz no tempo livre?" rows="6" name="hobbies"></textarea>
 </div>
 </div>
 </section>
@@ -383,13 +512,6 @@
 </div>
 </footer>
 <script>
-        // Micro-interactions
-        document.getElementById('characterSheet').addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Ficha salva com sucesso!');
-        });
-
-        // Hover effect for inputs to simulate quill writing sound/vibration could be added with JS if desired
         const inputs = document.querySelectorAll('input, textarea');
         inputs.forEach(input => {
             input.addEventListener('focus', () => {
