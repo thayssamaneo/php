@@ -37,7 +37,7 @@ try {
     // Se a ficha existir e pertencer ao usuário logado, prossegue com a deleção
     if ($ficha_refs) {
         
-        // Iniciamos uma transação para garantir que ou apaga TUDO ou não apaga NADA
+        // Inicia uma transação para garantir que ou apaga TUDO ou não apaga NADA
         $conexao->beginTransaction();
 
         //  remover o registro principal na tabela 'fichas' para quebrar o vínculo
